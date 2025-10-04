@@ -28,11 +28,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
-    # Custom
-    
-    'api',
+    # Third-party apps
     'rest_framework',
-    'crosheaders'
+    'corsheaders',
+
+    # Local apps
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -110,3 +111,4 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
