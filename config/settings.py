@@ -126,6 +126,7 @@ REST_FRAMEWORK = {
 
 # Email Configuration - Development Mode
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@example.com'
 
 # For production, uncomment these lines and add to .env:
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
