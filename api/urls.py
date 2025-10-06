@@ -1,15 +1,15 @@
 from django.urls import path
-from . import views
+from . import views, auth_views
 
 urlpatterns = [
     # Test endpoint
     path('test/', views.test_api, name='api-test'),
     
     # Authentication endpoints
-    path('auth/register/', views.register, name='register'),
-    path('auth/login/', views.login, name='login'),
-    path('auth/verify-email/', views.verify_email, name='verify-email'),
-    path('auth/refresh/', views.refresh_token, name='refresh-token'),
+    path('auth/register/', auth_views.register, name='register'),
+    path('auth/login/', auth_views.login, name='login'),
+    path('auth/verify-email/', auth_views.verify_email, name='verify-email'),
+    path('auth/refresh/', auth_views.refresh_token, name='refresh-token'),
     
     # Project endpoints
     path('projects/', views.projects, name='projects'),
