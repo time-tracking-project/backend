@@ -7,6 +7,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.utils import timezone
+import os
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
@@ -25,14 +26,15 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         validated_data.pop('password_confirm')
         user = User.objects.create_user(**validated_data)
         
-        # Send verification email
-        self.send_verification_email(user)
+        # Send verification email (disabled for production)
+        # self.send_verification_email(user)
         
         return user
     
     def send_verification_email(self, user):
         subject = 'Verify Your Email Address'
-        verification_url = f"http://localhost:3000/verify-email/{user.email_verification_token}/"
+        frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+        verification_url = f"{frontend_url}/verify-email/{user.email_verification_token}/"
         
         html_message = f"""
         <h2>Welcome to Time Tracker!</h2>
@@ -82,8 +84,9 @@ class LoginSerializer(serializers.Serializer):
             user = authenticate(username=email, password=password)
             if not user:
                 raise serializers.ValidationError('Invalid credentials')
-            if not user.is_email_verified:
-                raise serializers.ValidationError('Please verify your email before logging in')
+            # Email verification disabled for production
+            # if not user.is_email_verified:
+            #     raise serializers.ValidationError('Please verify your email before logging in')
             attrs['user'] = user
             return attrs
         else:
