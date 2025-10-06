@@ -51,7 +51,8 @@ class TimeEntry(models.Model):
         ordering = ['-start_time']
     
     def __str__(self):
-        return f"{self.project.name} - {self.start_time.strftime('%Y-%m-%d %H:%M')}"
+        project_name = self.project.name if self.project else "No Project"
+        return f"{project_name} - {self.start_time.strftime('%Y-%m-%d %H:%M')}"
     
     def save(self, *args, **kwargs):
         # Calculate duration if both start and end times are set
