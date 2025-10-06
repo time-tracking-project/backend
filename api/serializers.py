@@ -1,11 +1,12 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
-from .models import User
+from .models import User, Project, TimeEntry
 from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
+from django.utils import timezone
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
@@ -87,3 +88,82 @@ class LoginSerializer(serializers.Serializer):
             return attrs
         else:
             raise serializers.ValidationError('Must include email and password')
+
+class ProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = ['id', 'name', 'description', 'color', 'created_at', 'updated_at', 'is_active']
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
+
+class TimeEntrySerializer(serializers.ModelSerializer):
+    project_name = serializers.CharField(source='project.name', read_only=True, allow_null=True)
+    project_color = serializers.CharField(source='project.color', read_only=True, allow_null=True)
+    duration_formatted = serializers.CharField(read_only=True)
+    is_running = serializers.BooleanField(read_only=True)
+    
+    class Meta:
+        model = TimeEntry
+        fields = [
+            'id', 'project', 'project_name', 'project_color', 'description', 
+            'start_time', 'end_time', 'duration_seconds', 'duration_formatted',
+            'status', 'is_running', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'duration_seconds', 'created_at', 'updated_at']
+    
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
+
+class StartTimerSerializer(serializers.Serializer):
+    project_id = serializers.IntegerField(required=False, allow_null=True)
+    description = serializers.CharField(required=False, allow_blank=True)
+    
+    def validate_project_id(self, value):
+        if value is None:
+            return value
+        try:
+            project = Project.objects.get(id=value, user=self.context['request'].user)
+            return value
+        except Project.DoesNotExist:
+            raise serializers.ValidationError("Project not found")
+    
+    def validate(self, attrs):
+        user = self.context['request'].user
+        
+        # Check if user already has a running timer
+        running_entry = TimeEntry.objects.filter(
+            user=user, 
+            status='running',
+            end_time__isnull=True
+        ).first()
+        
+        if running_entry:
+            raise serializers.ValidationError("You already have a running timer. Please stop it first.")
+        
+        return attrs
+
+class StopTimerSerializer(serializers.Serializer):
+    time_entry_id = serializers.IntegerField()
+    
+    def validate_time_entry_id(self, value):
+        try:
+            time_entry = TimeEntry.objects.get(
+                id=value, 
+                user=self.context['request'].user,
+                status='running'
+            )
+            return value
+        except TimeEntry.DoesNotExist:
+            raise serializers.ValidationError("Running time entry not found")
+
+class TimeEntrySummarySerializer(serializers.Serializer):
+    """Serializer for time tracking summary data"""
+    total_time_today = serializers.CharField()
+    total_time_this_week = serializers.CharField()
+    total_time_this_month = serializers.CharField()
+    running_timer = TimeEntrySerializer(required=False)
+    recent_entries = TimeEntrySerializer(many=True)
