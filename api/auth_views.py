@@ -14,6 +14,7 @@ def register(request):
     """
     Register a new user and send verification email.
     """
+    print("print display test!!!")
     serializer = UserRegistrationSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
